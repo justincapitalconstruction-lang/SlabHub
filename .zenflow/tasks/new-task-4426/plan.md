@@ -320,8 +320,12 @@ Created comprehensive technical specification in `spec.md` covering:
   - Installation instructions (venv, pip install)
   - Configuration (.env setup)
   - Running the application
-  - Running watcher service
-- Create runbook.md with:
+  - Running watcher service 
+  - Advanced search filters (dimension ranges, date ranges)
+  - Image gallery for slabs with multiple photos
+  - Bulk edit operations
+  - CSV/Excel export functionality
+  - Create runbook.md with:
   - Pre-deployment checklist
   - Environment variable configuration guide
   - Database initialization steps
@@ -385,10 +389,6 @@ Created comprehensive technical specification in `spec.md` covering:
 
 The following features can be added after Monday launch:
 - User authentication and role-based access control
-- Advanced search filters (dimension ranges, date ranges)
-- Image gallery for slabs with multiple photos
-- Bulk edit operations
-- CSV/Excel export functionality
 - Reporting and analytics
 - Email notifications for low inventory
 - Integration with accounting systems
