@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}{{ slab.name }} - SlabHub{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link" href="/kiosk">
+        <i class="bi bi-arrow-left"></i> Back to Browse
+    </a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-4">
+        <!-- Left Column: Image -->
+        <div class="col-lg-7">
+            <div class="slab-view-image-container sticky-top">
+                {% if slab.primary_image %}
+                <img src="{{ slab.primary_image }}" alt="{{ slab.name }}"
+                     class="img-fluid rounded shadow-lg w-100 slab-detail-image"
+                     id="primaryImage">
+                {% else %}
+                <div class="slab-view-placeholder">
+                    <i class="bi bi-image"></i>
+                    <p>No Image Available</p>
+                </div>
+                {% endif %}
+
+                <!-- Additional Images -->
+                {% if slab.additional_images and slab.additional_images|length > 0 %}
+                <div class="mt-3">
+                    <div class="row g-2">
+                        <div class="col-3">
+                            <img src="{{ slab.primary_image }}" alt="{{ slab.name }}"
+                                 class="img-thumbnail thumbnail-image active"
+                                 onclick="changeImage('{{ slab.primary_image }}', this)">
+                        </div>
+                        {% for img in slab.additional_images %}
+                        <div class="col-3">
+                            <img src="{{ img }}" alt="{{ slab.name }}"
+                                 class="img-thumbnail thumbnail-image"
+                                 onclick="changeImage('{{ img }}', this)">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Details -->
+        <div class="col-lg-5">
+            <div class="slab-view-details">
+                <!-- Title and ID -->
+                <div class="mb-4">
+                    <h1 class="display-5 fw-bold mb-2">{{ slab.name }}</h1>
+                    <p class="text-muted mb-0">
+                        <code class="fs-6">{{ slab.public_id }}</code>
+                    </p>
+                </div>
+
+                <!-- Badges -->
+                <div class="mb-4">
+                    {% if slab.stone_type %}
+                    <span class="badge bg-primary fs-6 me-2">
+                        <i class="bi bi-gem"></i> {{ slab.stone_type }}
+                    </span>
+                    {% endif %}
+
+                    {% if slab.color %}
+                    <span class="badge bg-secondary fs-6 me-2">
+                        <i class="bi bi-palette"></i> {{ slab.color }}
+                    </span>
+                    {% endif %}
+
+                    {% if slab.finish %}
+                    <span class="badge bg-info fs-6">
+                        <i class="bi bi-stars"></i> {{ slab.finish|title }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Price -->
+                {% if slab.price %}
+                <div class="mb-4">
+                    <h2 class="display-4 text-primary fw-bold mb-0">
+                        ${{ "%.2f"|format(slab.price) }}
+                    </h2>
+                    {% if slab.square_feet %}
+                    <p class="text-muted">
+                        ${{ "%.2f"|format(slab.price / slab.square_feet) }} per sq ft
+                    </p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Specifications -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Specifications</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            {% if slab.square_feet %}
+                            <dt class="col-sm-5">Size:</dt>
+                            <dd class="col-sm-7">
+                                <strong>{{ "%.2f"|format(slab.square_feet) }}</strong> sq ft
+                                {% if slab.length and slab.width %}
+                                <br><small class="text-muted">
+                                    {{ "%.1f"|format(slab.length) }}" × {{ "%.1f"|format(slab.width) }}"
+                                </small>
+                                {% endif %}
+                            </dd>
+                            {% endif %}
+
+                            {% if slab.thickness %}
+                            <dt class="col-sm-5">Thickness:</dt>
+                            <dd class="col-sm-7">{{ slab.thickness }}"</dd>
+                            {% endif %}
+
+                            {% if slab.finish %}
+                            <dt class="col-sm-5">Finish:</dt>
+                            <dd class="col-sm-7">{{ slab.finish|title }}</dd>
+                            {% endif %}
+
+                            {% if slab.location %}
+                            <dt class="col-sm-5">Location:</dt>
+                            <dd class="col-sm-7">
+                                <i class="bi bi-geo-alt"></i> {{ slab.location }}
+                            </dd>
+                            {% endif %}
+
+                            {% if slab.supplier %}
+                            <dt class="col-sm-5">Supplier:</dt>
+                            <dd class="col-sm-7">{{ slab.supplier }}</dd>
+                            {% endif %}
+
+                            {% if slab.quantity %}
+                            <dt class="col-sm-5">Available:</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge bg-success">{{ slab.quantity }} slab{% if slab.quantity != 1 %}s{% endif %}</span>
+                            </dd>
+                            {% endif %}
+                        </dl>
+                    </div>
+                </div>
+
+                <!-- Notes/Description -->
+                {% if slab.notes %}
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="bi bi-file-text"></i> Description</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">{{ slab.notes }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Tags -->
+                {% if slab.tags %}
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2">Tags:</h6>
+                    {% for tag in slab.tags.split(',') %}
+                    <span class="badge bg-light text-dark me-1 mb-1">{{ tag.strip() }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Call to Action -->
+                <div class="d-grid gap-2 mt-4">
+                    <a href="tel:+1234567890" class="btn btn-primary btn-lg">
+                        <i class="bi bi-telephone-fill"></i> Call to Inquire
+                    </a>
+                    <a href="mailto:info@slabhub.com?subject=Inquiry about {{ slab.public_id }}"
+                       class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-envelope-fill"></i> Email Us
+                    </a>
+                    <button class="btn btn-outline-secondary btn-lg" onclick="window.print()">
+                        <i class="bi bi-printer-fill"></i> Print Details
+                    </button>
+                </div>
+
+                <!-- Back Button -->
+                <div class="mt-4 text-center">
+                    <a href="/kiosk" class="btn btn-link">
+                        <i class="bi bi-arrow-left"></i> Back to Browse
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related/Similar Slabs Section (Optional) -->
+    <div class="mt-5 pt-5 border-top">
+        <h3 class="mb-4">Browse More Slabs</h3>
+        <div class="text-center">
+            {% if slab.stone_type %}
+            <a href="/kiosk?stone_type={{ slab.stone_type }}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-gem"></i> More {{ slab.stone_type }}
+            </a>
+            {% endif %}
+            <a href="/kiosk" class="btn btn-outline-secondary">
+                <i class="bi bi-grid-3x3"></i> View All Slabs
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Image gallery functionality
+function changeImage(imageSrc, thumbnail) {
+    // Update main image
+    document.getElementById('primaryImage').src = imageSrc;
+
+    // Update active thumbnail
+    document.querySelectorAll('.thumbnail-image').forEach(img => {
+        img.classList.remove('active');
+    });
+    thumbnail.classList.add('active');
+}
+
+// Print-specific styling
+window.addEventListener('beforeprint', function() {
+    // You can add print-specific JavaScript here if needed
+});
+</script>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Print styles */
+@media print {
+    .navbar, .footer, .btn, nav {
+        display: none !important;
+    }
+    .container {
+        max-width: 100%;
+    }
+    .slab-detail-image {
+        max-height: 400px;
+        object-fit: contain;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - SlabHub{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link active" href="/admin">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/admin/slabs">
+        <i class="bi bi-box-seam"></i> Slabs
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/admin/imports">
+        <i class="bi bi-upload"></i> Imports
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/kiosk">
+        <i class="bi bi-grid-3x3"></i> Kiosk
+    </a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-speedometer2"></i> Admin Dashboard
+        </h1>
+        <div>
+            <a href="/admin/slabs/new" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Slab
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Total Slabs -->
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Total Slabs</p>
+                            <h3 class="mb-0">{{ total_slabs }}</h3>
+                        </div>
+                        <div class="fs-1 text-primary opacity-50">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Slabs -->
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Available</p>
+                            <h3 class="mb-0">{{ available_slabs }}</h3>
+                        </div>
+                        <div class="fs-1 text-success opacity-50">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sold Slabs -->
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Sold</p>
+                            <h3 class="mb-0">{{ sold_slabs }}</h3>
+                        </div>
+                        <div class="fs-1 text-danger opacity-50">
+                            <i class="bi bi-cart-check"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Imports -->
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Imports (7 days)</p>
+                            <h3 class="mb-0">{{ recent_imports }}</h3>
+                        </div>
+                        <div class="fs-1 text-info opacity-50">
+                            <i class="bi bi-upload"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-lightning-fill"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="/admin/slabs/new" class="btn btn-outline-primary w-100 py-3">
+                                <i class="bi bi-plus-circle fs-4 d-block mb-2"></i>
+                                Add New Slab
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/admin/slabs" class="btn btn-outline-secondary w-100 py-3">
+                                <i class="bi bi-box-seam fs-4 d-block mb-2"></i>
+                                View All Slabs
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <form action="/admin/import/metadata" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-info w-100 py-3">
+                                    <i class="bi bi-upload fs-4 d-block mb-2"></i>
+                                    Import Metadata
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/admin/imports" class="btn btn-outline-warning w-100 py-3">
+                                <i class="bi bi-clock-history fs-4 d-block mb-2"></i>
+                                Import History
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Slabs -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Slabs</h5>
+                    <a href="/admin/slabs" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_slabs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Stone Type</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Size (sq ft)</th>
+                                    <th>Price</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for slab in recent_slabs %}
+                                <tr>
+                                    <td><code>{{ slab.public_id }}</code></td>
+                                    <td>
+                                        <strong>{{ slab.name }}</strong>
+                                        {% if slab.color %}
+                                        <br><small class="text-muted">{{ slab.color }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if slab.stone_type %}
+                                            <span class="badge bg-secondary">{{ slab.stone_type }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ slab.location or '-' }}</td>
+                                    <td>
+                                        {% if slab.status == 'available' %}
+                                            <span class="badge bg-success">Available</span>
+                                        {% elif slab.status == 'sold' %}
+                                            <span class="badge bg-danger">Sold</span>
+                                        {% elif slab.status == 'reserved' %}
+                                            <span class="badge bg-warning">Reserved</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ slab.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if slab.square_feet %}
+                                            {{ "%.2f"|format(slab.square_feet) }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if slab.price %}
+                                            ${{ "%.2f"|format(slab.price) }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ slab.created_at.strftime('%Y-%m-%d') }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="/admin/slabs/{{ slab.id }}" class="btn btn-outline-primary"
+                                               title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="/kiosk/slab/{{ slab.public_id }}" class="btn btn-outline-secondary"
+                                               title="View" target="_blank">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-5 text-center text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                        <p>No slabs found. <a href="/admin/slabs/new">Add your first slab</a></p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

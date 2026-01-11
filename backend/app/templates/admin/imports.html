@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Import History - Admin - SlabHub{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link" href="/admin">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/admin/slabs">
+        <i class="bi bi-box-seam"></i> Slabs
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="/admin/imports">
+        <i class="bi bi-upload"></i> Imports
+    </a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-upload"></i> Import History
+        </h1>
+        <div>
+            <form action="/admin/import/metadata" method="post" class="d-inline">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-upload"></i> Trigger Import
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Import Instructions -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Import Instructions</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Automatic Import</h6>
+                    <p class="small">Images placed in the watch folder are automatically processed:</p>
+                    <ul class="small">
+                        <li>Watch folder monitors for new images</li>
+                        <li>Images are validated and hashed for duplicates</li>
+                        <li>Slabs are auto-created with basic metadata</li>
+                        <li>Files are archived after processing</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Metadata Import</h6>
+                    <p class="small">Click "Trigger Import" to import from configured metadata file:</p>
+                    <ul class="small">
+                        <li>Supports Excel (.xlsx) and CSV files</li>
+                        <li>Maps columns to slab attributes</li>
+                        <li>Updates existing slabs or creates new ones</li>
+                        <li>Check import log for results</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import History -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Recent Imports</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if imports %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Source</th>
+                            <th>Batch ID</th>
+                            <th>Status</th>
+                            <th>Records</th>
+                            <th>Success</th>
+                            <th>Failed</th>
+                            <th>Duplicates</th>
+                            <th>Timestamp</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for import_log in imports %}
+                        <tr>
+                            <td>{{ import_log.id }}</td>
+                            <td>
+                                {% if import_log.import_source %}
+                                    <code>{{ import_log.import_source }}</code>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if import_log.batch_id %}
+                                    <code class="small">{{ import_log.batch_id }}</code>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if import_log.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif import_log.status == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% elif import_log.status == 'in_progress' %}
+                                    <span class="badge bg-warning text-dark">In Progress</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ import_log.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ import_log.total_records or 0 }}</td>
+                            <td>
+                                <span class="text-success">{{ import_log.successful_records or 0 }}</span>
+                            </td>
+                            <td>
+                                {% if import_log.failed_records and import_log.failed_records > 0 %}
+                                    <span class="text-danger">{{ import_log.failed_records }}</span>
+                                {% else %}
+                                    <span class="text-muted">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if import_log.duplicate_records and import_log.duplicate_records > 0 %}
+                                    <span class="text-warning">{{ import_log.duplicate_records }}</span>
+                                {% else %}
+                                    <span class="text-muted">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ import_log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                            </td>
+                            <td>
+                                {% if import_log.error_message %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            data-bs-toggle="modal" data-bs-target="#errorModal{{ import_log.id }}">
+                                        <i class="bi bi-exclamation-triangle"></i> Error
+                                    </button>
+
+                                    <!-- Error Modal -->
+                                    <div class="modal fade" id="errorModal{{ import_log.id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Import Error</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <pre class="small">{{ import_log.error_message }}</pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-5 text-center text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                <p>No import history found.</p>
+                <form action="/admin/import/metadata" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Start First Import
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

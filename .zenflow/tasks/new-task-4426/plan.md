@@ -23,6 +23,7 @@ Created comprehensive technical specification in `spec.md` covering:
 ---
 
 ### [ ] Step 1: Project Foundation & Database
+<!-- chat-id: 8368eeb7-16f9-4802-adb2-156ddeae6da2 -->
 
 **Objective**: Set up project structure, dependencies, and database layer
 
@@ -56,6 +57,7 @@ Created comprehensive technical specification in `spec.md` covering:
 ---
 
 ### [ ] Step 2: Image Processing & Duplicate Detection
+<!-- chat-id: f7cf7b75-6e5f-46c1-988b-b0c99700f1b8 -->
 
 **Objective**: Implement image validation and perceptual hashing for duplicate detection
 
@@ -83,6 +85,7 @@ Created comprehensive technical specification in `spec.md` covering:
 ---
 
 ### [ ] Step 3: CRUD Operations & Basic Admin
+<!-- chat-id: 0979755b-bc76-4d79-94fd-3b6f10143066 -->
 
 **Objective**: Implement database CRUD operations and basic admin interface
 

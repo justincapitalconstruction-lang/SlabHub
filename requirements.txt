@@ -1,0 +1,31 @@
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.23
+alembic==1.12.1
+
+# Configuration
+pydantic==2.5.0
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+
+# Templates
+jinja2==3.1.2
+
+# Image Processing
+pillow==10.1.0
+imagehash==4.3.1
+numpy==1.26.2
+
+# QR & Labels
+qrcode[pil]==7.4.2
+reportlab==4.0.7
+
+# File Watching
+watchdog==3.0.0
+
+# Utilities
+python-dateutil==2.8.2

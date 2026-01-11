@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}{{ slab.name }} - Admin - SlabHub{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link" href="/admin">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/admin/slabs">
+        <i class="bi bi-box-seam"></i> Slabs
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/admin/imports">
+        <i class="bi bi-upload"></i> Imports
+    </a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/admin/slabs">Slabs</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ slab.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="h3 mb-1">{{ slab.name }}</h1>
+            <p class="text-muted mb-0">
+                <code>{{ slab.public_id }}</code>
+                <span class="mx-2">&middot;</span>
+                Created {{ slab.created_at.strftime('%Y-%m-%d %H:%M') }}
+            </p>
+        </div>
+        <div>
+            <a href="/kiosk/slab/{{ slab.public_id }}" class="btn btn-outline-secondary" target="_blank">
+                <i class="bi bi-eye"></i> View Public
+            </a>
+            <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column: Edit Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-pencil"></i> Edit Slab</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="/admin/slabs/{{ slab.id }}" id="slabForm">
+                        <div class="row g-3">
+                            <!-- Name -->
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name"
+                                       value="{{ slab.name }}" required>
+                            </div>
+
+                            <!-- Stone Type -->
+                            <div class="col-md-6">
+                                <label for="stone_type" class="form-label">Stone Type</label>
+                                <input type="text" class="form-control" id="stone_type" name="stone_type"
+                                       value="{{ slab.stone_type or '' }}" list="stone_types_list">
+                                <datalist id="stone_types_list">
+                                    {% for type in stone_types %}
+                                    <option value="{{ type }}">
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+
+                            <!-- Supplier -->
+                            <div class="col-md-6">
+                                <label for="supplier" class="form-label">Supplier</label>
+                                <input type="text" class="form-control" id="supplier" name="supplier"
+                                       value="{{ slab.supplier or '' }}" list="suppliers_list">
+                                <datalist id="suppliers_list">
+                                    {% for supplier in suppliers %}
+                                    <option value="{{ supplier }}">
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+
+                            <!-- Color -->
+                            <div class="col-md-6">
+                                <label for="color" class="form-label">Color</label>
+                                <input type="text" class="form-control" id="color" name="color"
+                                       value="{{ slab.color or '' }}">
+                            </div>
+
+                            <!-- Finish -->
+                            <div class="col-md-4">
+                                <label for="finish" class="form-label">Finish</label>
+                                <select class="form-select" id="finish" name="finish">
+                                    <option value="">-</option>
+                                    {% for f in finishes %}
+                                    <option value="{{ f }}" {% if slab.finish == f %}selected{% endif %}>
+                                        {{ f|title }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Thickness -->
+                            <div class="col-md-4">
+                                <label for="thickness" class="form-label">Thickness (inches)</label>
+                                <input type="number" class="form-control" id="thickness" name="thickness"
+                                       step="0.125" value="{{ slab.thickness or '' }}">
+                            </div>
+
+                            <!-- Quantity -->
+                            <div class="col-md-4">
+                                <label for="quantity" class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity"
+                                       min="0" value="{{ slab.quantity }}">
+                            </div>
+
+                            <!-- Length -->
+                            <div class="col-md-4">
+                                <label for="length" class="form-label">Length (inches)</label>
+                                <input type="number" class="form-control" id="length" name="length"
+                                       step="0.1" value="{{ slab.length or '' }}">
+                            </div>
+
+                            <!-- Width -->
+                            <div class="col-md-4">
+                                <label for="width" class="form-label">Width (inches)</label>
+                                <input type="number" class="form-control" id="width" name="width"
+                                       step="0.1" value="{{ slab.width or '' }}">
+                            </div>
+
+                            <!-- Square Feet -->
+                            <div class="col-md-4">
+                                <label for="square_feet" class="form-label">Square Feet</label>
+                                <input type="number" class="form-control" id="square_feet" name="square_feet"
+                                       step="0.01" value="{{ slab.square_feet or '' }}">
+                            </div>
+
+                            <!-- Location -->
+                            <div class="col-md-6">
+                                <label for="location" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="location" name="location"
+                                       value="{{ slab.location or '' }}" list="locations_list">
+                                <datalist id="locations_list">
+                                    {% for loc in locations %}
+                                    <option value="{{ loc }}">
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
+                                <select class="form-select" id="status" name="status" required>
+                                    {% for s in statuses %}
+                                    <option value="{{ s }}" {% if slab.status == s %}selected{% endif %}>
+                                        {{ s|title }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Cost -->
+                            <div class="col-md-6">
+                                <label for="cost" class="form-label">Cost ($)</label>
+                                <input type="number" class="form-control" id="cost" name="cost"
+                                       step="0.01" value="{{ slab.cost or '' }}">
+                            </div>
+
+                            <!-- Price -->
+                            <div class="col-md-6">
+                                <label for="price" class="form-label">Price ($)</label>
+                                <input type="number" class="form-control" id="price" name="price"
+                                       step="0.01" value="{{ slab.price or '' }}">
+                            </div>
+
+                            <!-- Tags -->
+                            <div class="col-12">
+                                <label for="tags" class="form-label">Tags</label>
+                                <input type="text" class="form-control" id="tags" name="tags"
+                                       value="{{ slab.tags or '' }}"
+                                       placeholder="Comma-separated tags (e.g., premium, imported, exotic)">
+                                <small class="form-text text-muted">Separate tags with commas</small>
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="col-12">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="4">{{ slab.notes or '' }}</textarea>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="col-12">
+                                <hr>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save"></i> Save Changes
+                                </button>
+                                <a href="/admin/slabs" class="btn btn-outline-secondary">
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Preview & Actions -->
+        <div class="col-lg-4">
+            <!-- Image Preview -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-image"></i> Image</h6>
+                </div>
+                <div class="card-body">
+                    {% if slab.primary_image %}
+                    <img src="{{ slab.primary_image }}" alt="{{ slab.name }}"
+                         class="img-fluid rounded mb-2">
+                    <p class="small text-muted mb-0">{{ slab.primary_image }}</p>
+                    {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center rounded"
+                         style="height: 200px;">
+                        <div class="text-center text-muted">
+                            <i class="bi bi-image fs-1 d-block mb-2"></i>
+                            <p class="mb-0">No image</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- QR Code -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-qr-code"></i> QR Code</h6>
+                </div>
+                <div class="card-body">
+                    {% if slab.qr_code_path %}
+                    <img src="{{ slab.qr_code_path }}" alt="QR Code" class="img-fluid rounded mb-2">
+                    <p class="small text-muted mb-2">{{ slab.qr_code_path }}</p>
+                    {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center rounded mb-2"
+                         style="height: 150px;">
+                        <div class="text-center text-muted">
+                            <i class="bi bi-qr-code fs-1 d-block mb-2"></i>
+                            <p class="mb-0 small">No QR code</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <form method="post" action="/admin/slabs/{{ slab.id }}/generate-qr">
+                        <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-qr-code"></i> Generate QR Code
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-lightning-fill"></i> Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <form method="post" action="/admin/slabs/{{ slab.id }}/generate-label">
+                            <button type="submit" class="btn btn-outline-warning w-100">
+                                <i class="bi bi-tag"></i> Generate Label
+                            </button>
+                        </form>
+                        <a href="/kiosk/slab/{{ slab.public_id }}" class="btn btn-outline-secondary" target="_blank">
+                            <i class="bi bi-eye"></i> View Public Page
+                        </a>
+                        <a href="/s/{{ slab.public_id }}" class="btn btn-outline-info" target="_blank">
+                            <i class="bi bi-link-45deg"></i> Short URL
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Metadata</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row small mb-0">
+                        <dt class="col-sm-5">ID:</dt>
+                        <dd class="col-sm-7"><code>{{ slab.id }}</code></dd>
+
+                        <dt class="col-sm-5">Public ID:</dt>
+                        <dd class="col-sm-7"><code>{{ slab.public_id }}</code></dd>
+
+                        <dt class="col-sm-5">Created:</dt>
+                        <dd class="col-sm-7">{{ slab.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+
+                        <dt class="col-sm-5">Updated:</dt>
+                        <dd class="col-sm-7">{{ slab.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+
+                        {% if slab.import_source %}
+                        <dt class="col-sm-5">Import Source:</dt>
+                        <dd class="col-sm-7">{{ slab.import_source }}</dd>
+                        {% endif %}
+
+                        {% if slab.import_batch_id %}
+                        <dt class="col-sm-5">Batch ID:</dt>
+                        <dd class="col-sm-7"><code>{{ slab.import_batch_id }}</code></dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Form -->
+<form id="deleteForm" method="post" action="/admin/slabs/{{ slab.id }}/delete" style="display: none;">
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function confirmDelete() {
+    if (confirm('Are you sure you want to delete this slab? This action cannot be undone.')) {
+        document.getElementById('deleteForm').submit();
+    }
+}
+
+// Auto-calculate square feet when length and width change
+document.getElementById('length').addEventListener('input', calculateSquareFeet);
+document.getElementById('width').addEventListener('input', calculateSquareFeet);
+
+function calculateSquareFeet() {
+    const length = parseFloat(document.getElementById('length').value) || 0;
+    const width = parseFloat(document.getElementById('width').value) || 0;
+    if (length > 0 && width > 0) {
+        const sqFt = (length * width) / 144; // Convert sq inches to sq feet
+        document.getElementById('square_feet').value = sqFt.toFixed(2);
+    }
+}
+</script>
+{% endblock %}
