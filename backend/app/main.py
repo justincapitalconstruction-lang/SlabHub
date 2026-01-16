@@ -9,7 +9,7 @@ from typing import Optional
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -336,15 +336,14 @@ async def not_found_handler(request: Request, exc):
     """
     Custom 404 handler.
 
-    Returns a JSON response for API requests, HTML for browser requests.
+    Always returns a JSON response with proper status code for APIs and redirects
+    to the kiosk for other routes.
     """
     if request.url.path.startswith("/api/"):
-        return {
-            "detail": "Not found",
-            "path": request.url.path
-        }
-
-    # For non-API requests, could return a custom 404 page
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Not found", "path": request.url.path},
+        )
     return RedirectResponse(url="/kiosk")
 
 
@@ -352,15 +351,13 @@ async def not_found_handler(request: Request, exc):
 async def internal_error_handler(request: Request, exc):
     """
     Custom 500 handler.
-
-    Logs the error and returns a generic error message.
+    Logs the error and returns a JSON response with a 500 status code.
     """
     logger.error(f"Internal server error on {request.url.path}: {exc}", exc_info=True)
-
-    return {
-        "detail": "Internal server error",
-        "path": request.url.path
-    }
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "path": request.url.path},
+    )
 
 
 # ============================================================================

@@ -60,3 +60,7 @@ processed/
 archive/
 labels/
 qr/
+
+# Temp files
+tmpclaude-*
+.claude/

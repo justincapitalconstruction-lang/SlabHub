@@ -210,6 +210,7 @@ class Slab(Base):
     qr_code_path: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
+        unique=True,
         comment="Path to generated QR code image"
     )
 

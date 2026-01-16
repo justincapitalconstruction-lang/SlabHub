@@ -201,9 +201,10 @@ def update_slab(
         return slab
 
     except Exception as e:
+        # Roll back and re‑raise to allow callers to handle server errors separately
         logger.error(f"Error updating slab {slab_id}: {e}", exc_info=True)
         db.rollback()
-        return None
+        raise
 
 
 def delete_slab(db: Session, slab_id: int) -> bool:
@@ -457,7 +458,7 @@ def update_inventory_item(
     except Exception as e:
         logger.error(f"Error updating inventory item {item_id}: {e}", exc_info=True)
         db.rollback()
-        return None
+        raise
 
 
 def delete_inventory_item(db: Session, item_id: int) -> bool:
@@ -627,7 +628,7 @@ def update_shipment(
     except Exception as e:
         logger.error(f"Error updating shipment {shipment_id}: {e}", exc_info=True)
         db.rollback()
-        return None
+        raise
 
 
 def delete_shipment(db: Session, shipment_id: int) -> bool:
