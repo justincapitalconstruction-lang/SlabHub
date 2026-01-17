@@ -247,7 +247,7 @@ logger.info(f"Initialized templates from: {templates_path}")
 # ============================================================================
 
 # Import routers
-from backend.app.routers import slabs, admin, kiosk, jobs, workers, gpt
+from backend.app.routers import slabs, admin, kiosk, jobs, workers, gpt, catalog
 
 # Mount API routers
 app.include_router(
@@ -289,6 +289,13 @@ app.include_router(
     tags=["gpt"]
 )
 
+# Mount Catalog API routers
+app.include_router(
+    catalog.router,
+    prefix="/api/v1/catalog",
+    tags=["catalog"]
+)
+
 logger.info("Registered routes:")
 logger.info("  - /api/v1/slabs (Slab API)")
 logger.info("  - /admin (Admin interface)")
@@ -296,6 +303,7 @@ logger.info("  - /kiosk (Public kiosk)")
 logger.info("  - /api/v1/jobs (Job API)")
 logger.info("  - /api/v1/workers (Worker API)")
 logger.info("  - /api/v1/gpt (GPT API)")
+logger.info("  - /api/v1/catalog (Catalog API)")
 
 
 # ============================================================================
