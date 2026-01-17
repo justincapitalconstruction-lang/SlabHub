@@ -23,7 +23,7 @@ from backend.app.crud import (
 from backend.app.schemas import SlabCreate, SlabUpdate
 from backend.app.services.import_processor import ImportProcessor
 from backend.app.utils.qr_generator import generate_qr_code
-from backend.app.utils.label_printer import generate_label
+from backend.app.utils.label_printer import generate_label_pdf as generate_label
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
