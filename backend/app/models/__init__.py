@@ -6,6 +6,7 @@ from backend.app.models.base import Base, engine, SessionLocal, get_db, init_db
 from backend.app.models.slab import Slab
 from backend.app.models.inventory import InventoryItem, Shipment
 from backend.app.models.import_log import ImportLog
+from backend.app.models.job import Job, JobEvent
 
 # Export all models and utilities
 __all__ = [
@@ -21,4 +22,6 @@ __all__ = [
     "InventoryItem",
     "Shipment",
     "ImportLog",
+    "Job",
+    "JobEvent",
 ]

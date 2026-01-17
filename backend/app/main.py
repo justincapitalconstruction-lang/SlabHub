@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 
 from backend.app.config import settings
 from backend.app.version import __version__
+from backend.app.core.paths import log_path_map
 import os
 import shutil
 from backend.app.models import init_db, SessionLocal, get_db
@@ -167,6 +168,8 @@ async def lifespan(app: FastAPI):
     logger.info(f"Database: {settings.database_url}")
     logger.info(f"Debug Mode: {settings.debug}")
     logger.info(f"Root Directory: {settings.slabhub_root}")
+    # Log the mapping of logical directories to absolute paths
+    log_path_map(logger)
     logger.info("=" * 60)
 
     # Yield control to application
@@ -244,7 +247,7 @@ logger.info(f"Initialized templates from: {templates_path}")
 # ============================================================================
 
 # Import routers
-from backend.app.routers import slabs, admin, kiosk
+from backend.app.routers import slabs, admin, kiosk, jobs
 
 # Mount API routers
 app.include_router(
@@ -265,10 +268,18 @@ app.include_router(
     tags=["kiosk"]
 )
 
+# Mount Jobs API routers
+app.include_router(
+    jobs.router,
+    prefix="/api/v1/jobs",
+    tags=["jobs"]
+)
+
 logger.info("Registered routes:")
 logger.info("  - /api/v1/slabs (Slab API)")
 logger.info("  - /admin (Admin interface)")
 logger.info("  - /kiosk (Public kiosk)")
+logger.info("  - /api/v1/jobs (Job API)")
 
 
 # ============================================================================
