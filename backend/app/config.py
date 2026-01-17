@@ -54,6 +54,17 @@ class Settings(BaseSettings):
     enable_auto_import: bool = Field(default=True)
     enable_watch_folder: bool = Field(default=True)
 
+    # ------------------------------------------------------------------
+    # Phase 8 – Operational Modes
+    # ------------------------------------------------------------------
+    # When set to True, the API returns 503 Service Unavailable for all
+    # endpoints except health checks. Use this during maintenance windows.
+    maintenance_mode: bool = False
+    # When set to True, non-read operations (POST, PUT, DELETE) will return
+    # 503 Service Unavailable. This allows the service to operate in
+    # read-only mode while still serving GET requests.
+    read_only_mode: bool = False
+
     # Root directory enforcement
     # The application will verify that it is running from this root directory on startup.
     slabhub_root: str = Field(default="D:/SlabHub")

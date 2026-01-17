@@ -207,6 +207,32 @@ app = FastAPI(
 )
 
 
+# ---------------------------------------------------------------------------
+# Middleware: Maintenance and Read-Only Modes
+# ---------------------------------------------------------------------------
+@app.middleware("http")
+async def maintenance_middleware(request: Request, call_next):
+    """Enforce maintenance and read-only modes on incoming requests."""
+    # Health check and static routes are always allowed
+    if settings.maintenance_mode and not request.url.path.startswith("/health"):
+        return JSONResponse(status_code=503, content={"detail": "Service under maintenance"})
+    if (
+        settings.read_only_mode
+        and request.method not in ("GET", "HEAD", "OPTIONS")
+        and not request.url.path.startswith("/health")
+    ):
+        return JSONResponse(status_code=503, content={"detail": "Service in read-only mode"})
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def access_log_middleware(request: Request, call_next):
+    """Log each incoming request's method and path."""
+    logger.info(f"{request.method} {request.url.path}")
+    response = await call_next(request)
+    return response
+
+
 # ============================================================================
 # CORS Middleware
 # ============================================================================
@@ -247,7 +273,7 @@ logger.info(f"Initialized templates from: {templates_path}")
 # ============================================================================
 
 # Import routers
-from backend.app.routers import slabs, admin, kiosk, jobs, workers, gpt, catalog
+from backend.app.routers import slabs, admin, kiosk, jobs, workers, gpt, catalog, admin_settings
 
 # Mount API routers
 app.include_router(
@@ -296,6 +322,13 @@ app.include_router(
     tags=["catalog"]
 )
 
+# Mount Admin Settings API routers
+app.include_router(
+    admin_settings.router,
+    prefix="/api/v1/admin/settings",
+    tags=["admin-settings"]
+)
+
 logger.info("Registered routes:")
 logger.info("  - /api/v1/slabs (Slab API)")
 logger.info("  - /admin (Admin interface)")
@@ -304,6 +337,7 @@ logger.info("  - /api/v1/jobs (Job API)")
 logger.info("  - /api/v1/workers (Worker API)")
 logger.info("  - /api/v1/gpt (GPT API)")
 logger.info("  - /api/v1/catalog (Catalog API)")
+logger.info("  - /api/v1/admin/settings (Admin Settings API)")
 
 
 # ============================================================================
