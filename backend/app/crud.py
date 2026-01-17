@@ -162,9 +162,10 @@ def create_slab(db: Session, slab_data: SlabCreate) -> Optional[Slab]:
         return slab
 
     except Exception as e:
+        # Roll back and re-raise unexpected errors so the caller can return a 500
         logger.error(f"Error creating slab: {e}", exc_info=True)
         db.rollback()
-        return None
+        raise
 
 
 def update_slab(
@@ -234,7 +235,7 @@ def delete_slab(db: Session, slab_id: int) -> bool:
     except Exception as e:
         logger.error(f"Error deleting slab {slab_id}: {e}", exc_info=True)
         db.rollback()
-        return False
+        raise
 
 
 def search_slabs(db: Session, query: str, limit: int = 50) -> List[Slab]:
@@ -419,7 +420,7 @@ def create_inventory_item(
     except Exception as e:
         logger.error(f"Error creating inventory item: {e}", exc_info=True)
         db.rollback()
-        return None
+        raise
 
 
 def update_inventory_item(
@@ -488,7 +489,7 @@ def delete_inventory_item(db: Session, item_id: int) -> bool:
     except Exception as e:
         logger.error(f"Error deleting inventory item {item_id}: {e}", exc_info=True)
         db.rollback()
-        return False
+        raise
 
 
 # ============================================================================
@@ -589,7 +590,7 @@ def create_shipment(db: Session, shipment_data: ShipmentCreate) -> Optional[Ship
     except Exception as e:
         logger.error(f"Error creating shipment: {e}", exc_info=True)
         db.rollback()
-        return None
+        raise
 
 
 def update_shipment(
@@ -657,7 +658,7 @@ def delete_shipment(db: Session, shipment_id: int) -> bool:
     except Exception as e:
         logger.error(f"Error deleting shipment {shipment_id}: {e}", exc_info=True)
         db.rollback()
-        return False
+        raise
 
 
 # ============================================================================

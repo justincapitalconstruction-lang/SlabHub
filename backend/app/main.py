@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from backend.app.config import settings
+from backend.app.version import __version__
 from backend.app.models import init_db, SessionLocal, get_db
 from backend.app.services.watch_folder import WatchFolderService
 from backend.app.services.import_processor import ImportProcessor
@@ -175,7 +176,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="SlabHub",
     description="Stone Slab Inventory Management System with SlabCrop Integration",
-    version="1.0.0",
+    version=__version__,
     lifespan=lifespan,
     debug=settings.debug,
 )

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=SlabHub
+Comment=Launch the SlabHub server
+Exec=python3 /path/to/your/start_services.py
+Icon=/path/to/your/custom/icon.png
+Terminal=true
+Categories=Utility;
