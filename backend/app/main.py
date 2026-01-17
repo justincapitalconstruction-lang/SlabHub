@@ -15,6 +15,8 @@ from fastapi.templating import Jinja2Templates
 
 from backend.app.config import settings
 from backend.app.version import __version__
+import os
+import shutil
 from backend.app.models import init_db, SessionLocal, get_db
 from backend.app.services.watch_folder import WatchFolderService
 from backend.app.services.import_processor import ImportProcessor
@@ -58,6 +60,19 @@ async def lifespan(app: FastAPI):
     logger.info("SlabHub Application Starting...")
     logger.info("=" * 60)
 
+    # Print version and root information early
+    logger.info(f"Version: {__version__}")
+    logger.info(f"Configured root: {settings.slabhub_root}")
+
+    # Root path enforcement
+    expected_root = Path(settings.slabhub_root).resolve()
+    current_root = Path.cwd().resolve()
+    if current_root != expected_root:
+        logger.error(
+            f"Invalid root directory. Expected {expected_root}, but running from {current_root}"
+        )
+        raise RuntimeError("SlabHub must be run from the configured root directory")
+
     # Initialize database
     try:
         logger.info("Initializing database...")
@@ -85,7 +100,13 @@ async def lifespan(app: FastAPI):
                 dir_path.mkdir(parents=True, exist_ok=True)
                 logger.debug(f"Created directory: {dir_path}")
 
-        logger.info("Required directories created successfully")
+        # Verify that all required directories exist after creation
+        missing_dirs = [str(d) for d in dirs_to_create if d and not d.exists()]
+        if missing_dirs:
+            logger.error(f"Required directories missing: {missing_dirs}")
+            raise RuntimeError(f"Required directories missing: {missing_dirs}")
+
+        logger.info("Required directories created and verified successfully")
     except Exception as e:
         logger.error(f"Failed to create required directories: {e}", exc_info=True)
         # Non-fatal, continue startup
@@ -145,6 +166,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"Public URL: {settings.public_base_url}")
     logger.info(f"Database: {settings.database_url}")
     logger.info(f"Debug Mode: {settings.debug}")
+    logger.info(f"Root Directory: {settings.slabhub_root}")
     logger.info("=" * 60)
 
     # Yield control to application
@@ -290,14 +312,17 @@ async def health_check():
 
         return {
             "status": "healthy",
-            "version": "1.0.0",
+            "version": __version__,
             "database": db_status,
             "database_url": settings.database_url,
             "watch_folder_enabled": settings.enable_watch_folder,
             "watch_folder_running": watch_folder_running,
-            "watch_folder_path": str(settings.slabcrop_output_folder) if settings.enable_watch_folder else None,
+            "watch_folder_path": str(settings.slabcrop_output_folder)
+            if settings.enable_watch_folder
+            else None,
             "public_base_url": settings.public_base_url,
             "debug": settings.debug,
+            "root": settings.slabhub_root,
         }
 
     except Exception as e:
@@ -306,6 +331,56 @@ async def health_check():
             "status": "unhealthy",
             "error": str(e)
         }
+
+
+# Additional health endpoints for granular checks
+
+@app.get("/health/db", include_in_schema=False)
+async def health_db():
+    """
+    Database health endpoint.
+    Checks database connectivity and returns status.
+    """
+    try:
+        db = SessionLocal()
+        try:
+            db.execute("SELECT 1")
+            status = "connected"
+        except Exception as e:
+            status = f"error: {str(e)}"
+        finally:
+            db.close()
+        return {"database": status}
+    except Exception as e:
+        logger.error(f"Database health check failed: {e}", exc_info=True)
+        return {"database": f"error: {str(e)}"}
+
+
+@app.get("/health/storage", include_in_schema=False)
+async def health_storage():
+    """
+    Storage health endpoint.
+    Checks available disk space for the configured root directory.
+    """
+    try:
+        total, used, free = shutil.disk_usage(settings.slabhub_root)
+        return {
+            "storage_total_bytes": total,
+            "storage_used_bytes": used,
+            "storage_free_bytes": free,
+        }
+    except Exception as e:
+        logger.error(f"Storage health check failed: {e}", exc_info=True)
+        return {"storage": f"error: {str(e)}"}
+
+
+@app.get("/health/queue", include_in_schema=False)
+async def health_queue():
+    """
+    Queue health endpoint.
+    Since a queue system is not yet implemented, this returns a stub status.
+    """
+    return {"queue": "not implemented"}
 
 
 # ============================================================================

@@ -314,6 +314,10 @@ To access SlabHub from other devices on your network:
 5. Run tests: `python scripts/test_system.py`
 6. Submit pull request
 
+## Agent Onboarding
+
+Before contributing code to SlabHub, you **must** read the [AGENTS_ONBOARDING.md](AGENTS_ONBOARDING.md) document.  It contains mandatory rules of engagement, definition of done, version bump enforcement, and governance policies for agents working on this project.  You must create a restore point before making any changes and follow the stability and maturity checklist in strict numerical order.
+
 ### Code Style
 - Follow PEP 8 guidelines
 - Use type hints where applicable

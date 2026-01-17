@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     enable_auto_import: bool = Field(default=True)
     enable_watch_folder: bool = Field(default=True)
 
+    # Root directory enforcement
+    # The application will verify that it is running from this root directory on startup.
+    slabhub_root: str = Field(default="D:/SlabHub")
+
     class Config:
         env_file = ".env"
         case_sensitive = False
