@@ -7,6 +7,8 @@ from backend.app.models.slab import Slab
 from backend.app.models.inventory import InventoryItem, Shipment
 from backend.app.models.import_log import ImportLog
 from backend.app.models.job import Job, JobEvent
+from backend.app.models.worker import Worker
+from backend.app.models.gpt import GPTRequest, GPTResponse
 
 # Export all models and utilities
 __all__ = [
@@ -24,4 +26,7 @@ __all__ = [
     "ImportLog",
     "Job",
     "JobEvent",
+    "Worker",
+    "GPTRequest",
+    "GPTResponse",
 ]
