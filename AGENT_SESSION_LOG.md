@@ -95,3 +95,57 @@ Rules:
 **Phase 0 Runtime Verification:** ⏸️ BLOCKED pending Phase 1 fix
 
 ---
+
+## Session: Phase 1 (Partial) — Schema Import Fix
+
+### Session Date: 2026-01-18
+### Agent Name: Claude Opus 4.5
+### Starting Version: 2.01
+### New Version (+0.01): 2.02
+### Restore Tag (created BEFORE coding): restore/phase1-start-2026-01-18
+### Branch: SlabHub
+
+#### Tasks Planned (before coding)
+- [x] Fix schema import conflict (schemas/ directory vs schemas.py file)
+- [x] Verify server starts successfully
+- [x] Complete Phase 0 health endpoint verification
+
+#### Notes Before Coding
+- Confirmed root is `D:\SlabHub`
+- Confirmed no writes to `C:\`
+- Restore tag pushed to GitHub: restore/phase1-start-2026-01-18
+
+#### Results (after coding)
+- Files changed:
+  - `backend/app/schemas/__init__.py` — Added importlib-based re-export of schemas.py
+- Summary of changes:
+  - Used importlib.util to explicitly load schemas.py file
+  - Re-exported all public names to package namespace
+  - Resolves Python import precedence issue (directory over file)
+
+#### Verification Performed
+- [x] Server starts successfully
+- [x] /health OK — Version: 2.01, Root: D:/slabHub
+- [x] /health/db OK — Returns 200 (SQLAlchemy text() warning is non-fatal)
+- [x] /health/storage OK — Returns storage stats
+
+Evidence:
+```json
+GET /health:
+{
+    "status": "healthy",
+    "version": "2.01",
+    "root": "D:/slabHub",
+    ...
+}
+
+GET /health/storage:
+{
+    "storage_total_bytes": 104857595904,
+    "storage_free_bytes": 45527130112
+}
+```
+
+**Phase 0 Verification:** ✅ NOW COMPLETE (unblocked by this fix)
+
+---
