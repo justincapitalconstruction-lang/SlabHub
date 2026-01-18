@@ -1,3 +1,10 @@
+> **IMPORTANT — REQUIRED READING**
+>
+> Before making any changes to this repository, you MUST read:
+> - PRE_PHASE0_BASELINE.md
+> - AGENTS_RULES_OF_ENGAGEMENT.md
+> - PHASE_EXECUTION_PLAN.md
+
 # SlabHub - Stone Slab Inventory Management System
 
 SlabHub is a comprehensive inventory management system designed specifically for stone slab businesses. It integrates seamlessly with SlabCrop for automated image processing, features QR code generation for easy slab identification, and provides both admin and public-facing kiosk interfaces.
