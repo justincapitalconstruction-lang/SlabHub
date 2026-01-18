@@ -152,6 +152,48 @@ ENABLE_WATCH_FOLDER=true
 SLABCROP_OUTPUT_FOLDER=D:/SlabCrop/output
 ```
 
+## Developer Setup
+
+### Environment Requirements
+- **SLABHUB_ROOT**: Must be set to `D:\SlabHub` (enforced at startup)
+- All data is stored under `D:\SlabHub\data\`
+- Never run from `C:\` or any other drive
+
+### Validate Installation
+Run the import smoke test to verify all packages are correctly configured:
+```bash
+python scripts/import_smoke_test.py
+```
+
+Expected output:
+```
+==================================================
+SlabHub Import Smoke Test
+==================================================
+
+[OK] backend.app.schemas
+[OK] backend.app.models
+[OK] backend.app.routers
+[OK] backend.app.services
+[OK] backend.app.utils
+[OK] backend.app.core
+[OK] backend.app.config
+[OK] backend.app.version (v2.02)
+
+==================================================
+PASSED: All imports successful
+```
+
+### Verify Health Endpoints
+After starting the server, verify health endpoints:
+```bash
+curl http://localhost:8000/health
+curl http://localhost:8000/health/db
+curl http://localhost:8000/health/storage
+```
+
+All endpoints should return HTTP 200 with JSON status information.
+
 ## API Documentation
 
 ### Interactive API Docs
