@@ -18,6 +18,7 @@ from backend.app.version import __version__
 from backend.app.models import init_db, SessionLocal, get_db
 from backend.app.services.watch_folder import WatchFolderService
 from backend.app.services.import_processor import ImportProcessor
+from backend.app.core.drive_validator import enforce_drive_policy_at_startup
 
 # Configure logging
 logging.basicConfig(
@@ -57,6 +58,10 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info("SlabHub Application Starting...")
     logger.info("=" * 60)
+
+    # ========== DRIVE POLICY VALIDATION ==========
+    # CRITICAL: Ensure all paths are on D:\ drive before proceeding
+    enforce_drive_policy_at_startup(settings)
 
     # Initialize database
     try:
@@ -290,7 +295,7 @@ async def health_check():
 
         return {
             "status": "healthy",
-            "version": "1.0.0",
+            "version": __version__,
             "database": db_status,
             "database_url": settings.database_url,
             "watch_folder_enabled": settings.enable_watch_folder,

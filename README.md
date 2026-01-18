@@ -63,7 +63,7 @@ SlabHub is a comprehensive inventory management system designed specifically for
 
 1. **Clone or Extract the Repository**
    ```bash
-   cd C:\SlabHub
+   cd D:\slabHub
    ```
 
 2. **Create Virtual Environment**
@@ -372,4 +372,6 @@ For issues, questions, or contributions:
 
 ## Version
 
-Current Version: 1.0.0 (Monday Launch - January 2026)
+Current Version: 1.0.1 (January 2026)
+
+**IMPORTANT**: All SlabHub data must reside on D:\ drive. See [DRIVE_POLICY.md](DRIVE_POLICY.md).

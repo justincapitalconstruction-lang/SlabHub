@@ -24,7 +24,7 @@ This runbook provides day-to-day operational guidance for SlabHub. Use this as y
 **Step 1: Start SlabHub Services**
 ```bash
 # Navigate to SlabHub directory
-cd C:\SlabHub
+cd D:\slabHub
 
 # Activate virtual environment
 venv\Scripts\activate
@@ -98,7 +98,7 @@ curl http://localhost:8000/health
 
 **Method 1: Using Start Script (Recommended)**
 ```bash
-cd C:\SlabHub
+cd D:\slabHub
 venv\Scripts\activate
 python scripts/start_services.py
 ```
@@ -111,14 +111,14 @@ This provides:
 
 **Method 2: Direct Python Execution**
 ```bash
-cd C:\SlabHub
+cd D:\slabHub
 venv\Scripts\activate
 python backend/app/main.py
 ```
 
 **Method 3: Uvicorn Direct**
 ```bash
-cd C:\SlabHub
+cd D:\slabHub
 venv\Scripts\activate
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
 ```
@@ -159,7 +159,7 @@ Or use the restart script:
 @echo off
 taskkill /IM python.exe /F
 timeout /t 3
-cd C:\SlabHub
+cd D:\slabHub
 call venv\Scripts\activate
 python scripts\start_services.py
 ```
@@ -241,7 +241,7 @@ The importer automatically maps common field variations:
 
 **Step 1: Preview Import (Dry Run)**
 ```bash
-cd C:\SlabHub
+cd D:\slabHub
 venv\Scripts\activate
 
 # Preview what will be imported
@@ -945,10 +945,10 @@ Create `scripts/rotate_logs.bat`:
 ```batch
 @echo off
 set DATE=%date:~-4,4%%date:~-10,2%%date:~-7,2%
-rename C:\SlabHub\data\logs\slabhub.log slabhub_%DATE%.log
+rename D:\slabHub\data\logs\slabhub.log slabhub_%DATE%.log
 
 REM Delete logs older than 30 days
-forfiles /p "C:\SlabHub\data\logs" /m slabhub_*.log /d -30 /c "cmd /c del @path"
+forfiles /p "D:\slabHub\data\logs" /m slabhub_*.log /d -30 /c "cmd /c del @path"
 ```
 
 Schedule with Task Scheduler (run weekly).
@@ -990,7 +990,7 @@ Run periodically with Task Scheduler.
 ### Database Location
 
 ```
-C:\SlabHub\data\slabhub.db
+D:\slabHub\data\slabhub.db
 ```
 
 SQLite database file containing all slab data.
@@ -1471,7 +1471,7 @@ LOG_LEVEL=INFO
 ### File Locations Quick Reference
 
 ```
-C:\SlabHub\
+D:\slabHub\
 ├── .env                          # Configuration
 ├── data\
 │   ├── slabhub.db               # Database

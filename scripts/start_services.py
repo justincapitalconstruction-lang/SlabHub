@@ -30,6 +30,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from backend.app.config import settings
+from backend.app.core.drive_validator import enforce_drive_policy_at_startup
 
 # Configure logging
 logging.basicConfig(
@@ -362,6 +363,15 @@ def main():
         return 1
     logger.info("✓ All dependencies installed")
     logger.info("")
+
+    # Validate drive policy BEFORE starting services
+    logger.info("Validating drive policy...")
+    try:
+        enforce_drive_policy_at_startup(settings)
+    except SystemExit:
+        logger.error("Drive policy validation failed. Aborting startup.")
+        logger.error("See DRIVE_POLICY.md for details on configuring paths.")
+        return 1
 
     # Create service manager
     enable_watch = not args.no_watch

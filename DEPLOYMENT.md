@@ -42,7 +42,7 @@ This guide provides comprehensive deployment instructions for the SlabHub Monday
 - [ ] Prepare JSON metadata file (if importing existing library)
 - [ ] Test network connectivity between devices
 - [ ] Verify printer functionality
-- [ ] Create deployment folder: `C:\SlabHub`
+- [ ] Create deployment folder: `D:\slabHub`
 - [ ] Note computer's IP address for network access
 
 ---
@@ -73,13 +73,13 @@ mkdir SlabHub
 cd SlabHub
 
 # Extract files here or clone from repository
-# Your project files should be in C:\SlabHub
+# Your project files should be in D:\slabHub
 ```
 
 ### Step 3: Create Virtual Environment
 
 ```bash
-# From C:\SlabHub directory
+# From D:\slabHub directory
 python -m venv venv
 ```
 
@@ -95,7 +95,7 @@ venv\Scripts\activate
 ### Step 5: Install Dependencies
 
 ```bash
-# Ensure you're in C:\SlabHub with (venv) active
+# Ensure you're in D:\slabHub with (venv) active
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
@@ -108,7 +108,7 @@ pip list
 
 ### Step 6: Configure Environment Variables
 
-Create a `.env` file in `C:\SlabHub\`:
+Create a `.env` file in `D:\slabHub\`:
 
 ```env
 # ============================================================================
@@ -199,7 +199,7 @@ python -c "from backend.app.config import settings; print(f'Database: {settings.
 ### Step 1: Create Data Directories
 
 ```bash
-# From C:\SlabHub directory
+# From D:\slabHub directory
 mkdir data
 mkdir data\logs
 mkdir data\labels
@@ -276,7 +276,7 @@ SlabHub needs to accept incoming connections on port 8000.
 2. Click "Allow an app or feature through Windows Defender Firewall"
 3. Click "Change settings"
 4. Click "Allow another app..."
-5. Browse to: `C:\SlabHub\venv\Scripts\python.exe`
+5. Browse to: `D:\slabHub\venv\Scripts\python.exe`
 6. Add the app
 7. Ensure both "Private" and "Public" are checked
 8. Click OK
@@ -373,7 +373,7 @@ For external access or port forwarding:
 ### Method 1: Using Start Script (Recommended)
 
 ```bash
-# From C:\SlabHub with virtual environment active
+# From D:\slabHub with virtual environment active
 python scripts/start_services.py
 ```
 
@@ -386,7 +386,7 @@ This script:
 ### Method 2: Direct Uvicorn Launch
 
 ```bash
-# From C:\SlabHub
+# From D:\slabHub
 python backend/app/main.py
 ```
 
@@ -400,14 +400,14 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
 For running as a Windows service, use NSSM (Non-Sucking Service Manager):
 
 1. Download NSSM: https://nssm.cc/download
-2. Extract to `C:\SlabHub\nssm`
+2. Extract to `D:\slabHub\nssm`
 3. Run as administrator:
    ```bash
    nssm install SlabHub
    ```
 4. Configure:
-   - Path: `C:\SlabHub\venv\Scripts\python.exe`
-   - Startup directory: `C:\SlabHub`
+   - Path: `D:\slabHub\venv\Scripts\python.exe`
+   - Startup directory: `D:\slabHub`
    - Arguments: `scripts\start_services.py`
    - Service name: SlabHub
 5. Set to start automatically
@@ -510,7 +510,7 @@ python scripts/test_system.py
 
 1. **System Startup**
    ```bash
-   cd C:\SlabHub
+   cd D:\slabHub
    venv\Scripts\activate
    python scripts/start_services.py
    ```
@@ -787,17 +787,17 @@ python scripts/test_system.py
 **Automated Script:** Create `scripts/backup.bat`:
 ```batch
 @echo off
-set BACKUP_DIR=C:\SlabHub\data\backups
+set BACKUP_DIR=D:\slabHub\data\backups
 set DATE=%date:~-4,4%%date:~-10,2%%date:~-7,2%
 
 REM Create backup directory
 if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%"
 
 REM Backup database
-copy C:\SlabHub\data\slabhub.db "%BACKUP_DIR%\slabhub_%DATE%.db"
+copy D:\slabHub\data\slabhub.db "%BACKUP_DIR%\slabhub_%DATE%.db"
 
 REM Backup .env file
-copy C:\SlabHub\.env "%BACKUP_DIR%\.env_%DATE%.backup"
+copy D:\slabHub\.env "%BACKUP_DIR%\.env_%DATE%.backup"
 
 REM Keep only last 7 days
 forfiles /p "%BACKUP_DIR%" /m slabhub_*.db /d -7 /c "cmd /c del @path"
@@ -866,7 +866,7 @@ taskkill /IM python.exe /F
 
 **Step 2: Restore Database**
 ```bash
-cd C:\SlabHub
+cd D:\slabHub
 
 # Find latest backup
 dir data\backups\slabhub_*.db
