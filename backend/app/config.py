@@ -52,7 +52,7 @@ class Settings(BaseSettings):
 
     # Feature Flags
     enable_auto_import: bool = Field(default=True)
-    enable_watch_folder: bool = Field(default=True)
+    enable_watch_folder: bool = Field(default=False)
 
     # ------------------------------------------------------------------
     # Phase 8 – Operational Modes

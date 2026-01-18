@@ -70,7 +70,7 @@ SlabHub is a comprehensive inventory management system designed specifically for
 
 1. **Clone or Extract the Repository**
    ```bash
-   cd C:\SlabHub
+   cd D:\SlabHub
    ```
 
 2. **Create Virtual Environment**
@@ -98,7 +98,7 @@ SlabHub is a comprehensive inventory management system designed specifically for
 
    # SlabCrop Integration
    SLABCROP_OUTPUT_FOLDER=D:/SlabCrop/output
-   ENABLE_WATCH_FOLDER=true
+   ENABLE_WATCH_FOLDER=false
 
    # Paths
    LABEL_OUTPUT_FOLDER=./data/labels
