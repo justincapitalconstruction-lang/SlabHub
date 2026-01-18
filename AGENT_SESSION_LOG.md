@@ -73,10 +73,25 @@ Rules:
   - Version incremented per governance rules
 
 #### Verification Performed
-- [ ] Server starts successfully
-- [ ] /health OK
-- [ ] /health/db OK
-- [ ] Key feature tested (describe)
-- Evidence / output pasted here: (to be completed after server test)
+- [ ] Server starts successfully — **BLOCKED**
+- [ ] /health OK — **BLOCKED**
+- [ ] /health/db OK — **BLOCKED**
+- [ ] Key feature tested (describe) — **BLOCKED**
+
+#### Blocker Details
+**Status:** Phase 0 verification BLOCKED due to pre-existing code issue (not Phase 0 scope)
+
+**Issue:** Schema import conflict prevents server startup
+- `backend/app/schemas.py` (file) contains actual schemas
+- `backend/app/schemas/` (directory) takes import precedence
+- `backend/app/schemas/__init__.py` is empty (no re-exports)
+- Import error: `cannot import name 'SlabCreate' from 'backend.app.schemas'`
+
+**Resolution:** Deferred to Phase 1 per governance rules
+- Phase 0 scope is config/paths only
+- Code structural fixes belong in Phase 1+
+
+**Phase 0 Config Changes:** ✅ COMPLETE and committed (6a300c2)
+**Phase 0 Runtime Verification:** ⏸️ BLOCKED pending Phase 1 fix
 
 ---
