@@ -3,10 +3,11 @@ Admin router for SlabHub
 Server-side rendered admin interface with Bootstrap 5
 """
 import logging
+import shutil
 from typing import Optional
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Request, Form, Depends, HTTPException, status
+from fastapi import APIRouter, Request, Form, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -20,11 +21,12 @@ from backend.app.crud import (
     update_slab,
     delete_slab,
 )
-from backend.app.schemas import SlabCreate, SlabUpdate
+from backend.app.schemas import SlabCreate, SlabUpdate, BulkActionRequest
 from backend.app.services.import_processor import ImportProcessor
 from backend.app.utils.qr_generator import generate_qr_code
 from backend.app.utils.label_printer import generate_label_pdf as generate_label
 from pathlib import Path
+from backend.app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -273,6 +275,72 @@ async def admin_slab_update(
         raise HTTPException(status_code=500, detail="Failed to update slab")
 
 
+async def _save_slab_image(slab, file) -> Optional[str]:
+    """
+    Helper to save an uploaded image for a slab and return the path.
+    """
+    if not file or not file.filename:
+        return None
+        
+    # Create archive directory
+    archive_base = Path(settings.processed_archive_folder)
+    date_str = datetime.now().strftime("%Y%m%d")
+    upload_dir = archive_base / "manual" / date_str
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    # Build destination path
+    file_ext = Path(file.filename).suffix
+    dest_filename = f"{slab.public_id}_{datetime.now().strftime('%H%M%S')}{file_ext}"
+    dest_path = upload_dir / dest_filename
+
+    # Save file
+    with open(dest_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    return str(dest_path)
+
+
+@router.post("/admin/slabs/{slab_id}/upload-image", response_class=HTMLResponse, name="admin_slab_upload_image")
+async def admin_slab_upload_image(
+    slab_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload a new primary image for a slab.
+    """
+    try:
+        slab = get_slab(db, slab_id)
+        if not slab:
+            raise HTTPException(status_code=404, detail="Slab not found")
+
+        image_path = await _save_slab_image(slab, file)
+        if image_path:
+            # Calculate perceptual hash
+            from backend.app.utils import calculate_perceptual_hash
+            phash = calculate_perceptual_hash(Path(image_path))
+
+            # Update slab
+            slab.primary_image = image_path
+            if phash:
+                slab.perceptual_hash = phash
+            
+            db.commit()
+            logger.info(f"Uploaded new image for slab {slab.public_id}: {image_path}")
+
+        return RedirectResponse(
+            url=f"/admin/slabs/{slab_id}?success=image_uploaded",
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+
+    except Exception as e:
+        logger.error(f"Error uploading image for slab {slab_id}: {e}", exc_info=True)
+        return RedirectResponse(
+            url=f"/admin/slabs/{slab_id}?error=Failed+to+upload+image",
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+
+
 # ============================================================================
 # New Slab
 # ============================================================================
@@ -332,6 +400,7 @@ async def admin_slab_create(
     notes: Optional[str] = Form(None),
     cost: Optional[float] = Form(None),
     price: Optional[float] = Form(None),
+    image_file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
     """
@@ -362,6 +431,19 @@ async def admin_slab_create(
         new_slab = create_slab(db, slab_data)
         if not new_slab:
             raise HTTPException(status_code=500, detail="Failed to create slab")
+
+        # Handle image upload if provided
+        if image_file and image_file.filename:
+            image_path = await _save_slab_image(new_slab, image_file)
+            if image_path:
+                from backend.app.utils import calculate_perceptual_hash
+                phash = calculate_perceptual_hash(Path(image_path))
+                
+                new_slab.primary_image = image_path
+                if phash:
+                    new_slab.perceptual_hash = phash
+                db.commit()
+                logger.info(f"Uploaded image during creation for slab {new_slab.public_id}: {image_path}")
 
         # Redirect to slab detail with success message
         return RedirectResponse(
@@ -432,12 +514,117 @@ async def admin_imports(
         raise HTTPException(status_code=500, detail="Failed to load imports")
 
 
+@router.post("/admin/import/upload", name="admin_import_upload")
+async def admin_import_upload(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Import slab metadata from an uploaded CSV or XLSX file.
+
+    Supports:
+    - .csv files (UTF-8 or Latin-1 encoded)
+    - .xlsx files (requires openpyxl)
+
+    Returns redirect to imports list with status message.
+    """
+    filename = file.filename or ""
+    ext = filename.lower().split(".")[-1] if "." in filename else ""
+
+    if ext not in ("csv", "xlsx", "xls"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported file type: .{ext}. Use .csv or .xlsx"
+        )
+
+    try:
+        content = await file.read()
+
+        processor = ImportProcessor(db)
+        results = processor.process_file_upload(content, filename)
+
+        # Build redirect URL based on results
+        if results["status"] == "completed":
+            msg = f"success=Imported {results['rows_imported']} slabs, updated {results['rows_updated']}"
+        elif results["status"] == "partial":
+            msg = f"warning=Partial import: {results['rows_imported']} imported, {results['rows_updated']} updated, {results['rows_failed']} failed"
+        else:
+            msg = f"error={results['summary']}"
+
+        return RedirectResponse(
+            url=f"/admin/imports?{msg}",
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+
+    except Exception as e:
+        logger.error(f"Error during file upload: {e}", exc_info=True)
+        return RedirectResponse(
+            url=f"/admin/imports?error={str(e)}",
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+
+
+@router.post("/api/v1/import/metadata", name="api_import_metadata")
+async def api_import_metadata(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    API endpoint for metadata import (returns JSON).
+
+    Supports:
+    - .csv files (UTF-8 or Latin-1 encoded)
+    - .xlsx files (requires openpyxl)
+
+    Returns:
+        ImportResult with batch_id, status, row counts, and errors
+    """
+    from backend.app.schemas import ImportResult, ImportRowError
+
+    filename = file.filename or ""
+    ext = filename.lower().split(".")[-1] if "." in filename else ""
+
+    if ext not in ("csv", "xlsx", "xls"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported file type: .{ext}. Use .csv or .xlsx"
+        )
+
+    try:
+        content = await file.read()
+
+        processor = ImportProcessor(db)
+        results = processor.process_file_upload(content, filename)
+
+        # Convert to Pydantic model
+        return ImportResult(
+            batch_id=results["batch_id"],
+            status=results["status"],
+            file_type=results["file_type"],
+            rows_processed=results["rows_processed"],
+            rows_imported=results["rows_imported"],
+            rows_updated=results["rows_updated"],
+            rows_failed=results["rows_failed"],
+            rows_skipped=results["rows_skipped"],
+            errors=[ImportRowError(**e) for e in results["errors"]],
+            warnings=[ImportRowError(**w) for w in results["warnings"]],
+            summary=results["summary"]
+        )
+
+    except Exception as e:
+        logger.error(f"Error during API import: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
 @router.post("/admin/import/metadata", name="admin_import_metadata")
 async def admin_import_metadata(
     db: Session = Depends(get_db)
 ):
     """
-    Trigger metadata import from configured file.
+    Trigger metadata import from configured file path.
     """
     try:
         processor = ImportProcessor(db)
@@ -446,15 +633,75 @@ async def admin_import_metadata(
 
         if success:
             return RedirectResponse(
-                url="/admin/imports?success=import_started",
+                url="/admin/imports?success=import_completed",
                 status_code=status.HTTP_303_SEE_OTHER
             )
         else:
-            raise HTTPException(status_code=500, detail="Import failed")
+            return RedirectResponse(
+                url="/admin/imports?error=import_failed",
+                status_code=status.HTTP_303_SEE_OTHER
+            )
 
     except Exception as e:
         logger.error(f"Error triggering import: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to start import")
+        return RedirectResponse(
+            url=f"/admin/imports?error={str(e)}",
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+
+
+@router.post("/api/v1/admin/slabs/bulk", name="admin_slabs_bulk_action")
+async def admin_slabs_bulk_action(
+    request: BulkActionRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Perform bulk actions on multiple slabs.
+    """
+    try:
+        logger.info(f"Bulk action requested: {request.action} on {len(request.ids)} slabs")
+        
+        if request.action == "delete":
+            # Bulk delete
+            count = db.query(Slab).filter(Slab.id.in_(request.ids)).delete(synchronize_session=False)
+            db.commit()
+            return {"count": count, "action": "delete"}
+            
+        elif request.action == "update_status":
+            if not request.status:
+                raise HTTPException(status_code=400, detail="Status is required for update_status action")
+            
+            count = db.query(Slab).filter(Slab.id.in_(request.ids)).update(
+                {Slab.status: request.status}, 
+                synchronize_session=False
+            )
+            db.commit()
+            return {"count": count, "action": "update_status"}
+            
+        elif request.action == "update_location":
+            if not request.location:
+                raise HTTPException(status_code=400, detail="Location is required for update_location action")
+            
+            count = db.query(Slab).filter(Slab.id.in_(request.ids)).update(
+                {Slab.location: request.location}, 
+                synchronize_session=False
+            )
+            db.commit()
+            return {"count": count, "action": "update_location"}
+            
+        elif request.action == "analyze":
+            # For now, we'll just log this as a placeholder for Phase 4
+            # In Phase 4, this would trigger background jobs for GPT analysis
+            logger.warning(f"Bulk analysis not yet fully implemented (Phase 4 scope). Requested for {len(request.ids)} slabs.")
+            return {"count": len(request.ids), "action": "analyze", "message": "Bulk analysis queued (placeholder)"}
+            
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported bulk action: {request.action}")
+
+    except Exception as e:
+        logger.error(f"Error during bulk action: {e}", exc_info=True)
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============================================================================

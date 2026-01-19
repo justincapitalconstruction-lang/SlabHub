@@ -231,6 +231,18 @@ class LabelGenerateResponse(BaseModel):
 
 
 # ============================================================================
+# Bulk Action Schemas
+# ============================================================================
+
+class BulkActionRequest(BaseModel):
+    """Request schema for bulk actions on multiple slabs"""
+    ids: List[int]
+    action: str = Field(..., description="Action to perform: delete, update_status, update_location, analyze")
+    status: Optional[str] = Field(None, description="New status for update_status action")
+    location: Optional[str] = Field(None, description="New location for update_location action")
+
+
+# ============================================================================
 # Health Check Schema
 # ============================================================================
 
@@ -241,3 +253,37 @@ class HealthCheckResponse(BaseModel):
     database: str
     watch_folder_enabled: bool
     watch_folder_running: bool = False
+
+
+# ============================================================================
+# Metadata Import Schemas (Phase 2)
+# ============================================================================
+
+class ImportRowError(BaseModel):
+    """Schema for individual row validation errors"""
+    row: int = Field(..., description="Row number (1-indexed, header is row 1)")
+    column: Optional[str] = Field(None, description="Column name where error occurred")
+    message: str = Field(..., description="Error message")
+
+
+class ImportResult(BaseModel):
+    """Response schema for metadata import operations"""
+    batch_id: str = Field(..., description="Unique batch identifier for this import")
+    status: str = Field(..., description="Import status: completed, partial, failed")
+    file_type: str = Field(..., description="File type processed: csv or xlsx")
+    rows_processed: int = Field(0, description="Total rows processed (excluding header)")
+    rows_imported: int = Field(0, description="New slabs created")
+    rows_updated: int = Field(0, description="Existing slabs updated")
+    rows_failed: int = Field(0, description="Rows that failed validation")
+    rows_skipped: int = Field(0, description="Rows skipped (e.g., duplicates)")
+    errors: List[ImportRowError] = Field(default_factory=list, description="List of validation errors")
+    warnings: List[ImportRowError] = Field(default_factory=list, description="List of warnings")
+    summary: str = Field("", description="Human-readable summary")
+
+
+class ImportColumnSpec(BaseModel):
+    """Schema describing expected columns for import"""
+    name: str = Field(..., description="Column name")
+    required: bool = Field(False, description="Whether column is required")
+    data_type: str = Field("string", description="Expected data type: string, number, integer")
+    description: str = Field("", description="Column description")

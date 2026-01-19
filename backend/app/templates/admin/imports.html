@@ -27,10 +27,16 @@
         <h1 class="h3 mb-0">
             <i class="bi bi-upload"></i> Import History
         </h1>
-        <div>
+        <div class="d-flex gap-2">
+            <form action="/admin/import/upload" method="post" enctype="multipart/form-data" class="d-inline">
+                <input type="file" name="file" id="importFile" accept=".csv,.xlsx,.xls" class="d-none" onchange="this.form.submit()">
+                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('importFile').click()">
+                    <i class="bi bi-file-earmark-arrow-up"></i> Upload CSV/XLSX
+                </button>
+            </form>
             <form action="/admin/import/metadata" method="post" class="d-inline">
                 <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-upload"></i> Trigger Import
+                    <i class="bi bi-play-fill"></i> Trigger Background Import
                 </button>
             </form>
         </div>
@@ -44,23 +50,23 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <h6>Automatic Import</h6>
-                    <p class="small">Images placed in the watch folder are automatically processed:</p>
+                    <h6>File Upload Import</h6>
+                    <p class="small">Upload CSV or XLSX files with slab metadata:</p>
                     <ul class="small">
-                        <li>Watch folder monitors for new images</li>
-                        <li>Images are validated and hashed for duplicates</li>
-                        <li>Slabs are auto-created with basic metadata</li>
-                        <li>Files are archived after processing</li>
+                        <li>Supports .csv and .xlsx file formats</li>
+                        <li>Required column: <code>Name</code> (or <code>Title</code>, <code>Slab_Name</code>)</li>
+                        <li>Optional: StoneType, Supplier, Finish, Thickness, Color, Length, Width, Location, Status, Quantity, Cost, Price</li>
+                        <li>Include <code>SlabID</code> column to update existing slabs</li>
                     </ul>
                 </div>
                 <div class="col-md-6">
-                    <h6>Metadata Import</h6>
-                    <p class="small">Click "Trigger Import" to import from configured metadata file:</p>
+                    <h6>Column Mapping</h6>
+                    <p class="small">Headers are mapped automatically (case-insensitive):</p>
                     <ul class="small">
-                        <li>Supports Excel (.xlsx) and CSV files</li>
-                        <li>Maps columns to slab attributes</li>
-                        <li>Updates existing slabs or creates new ones</li>
-                        <li>Check import log for results</li>
+                        <li><code>Name</code>, <code>Title</code>, <code>Slab_Name</code> &rarr; Slab Name</li>
+                        <li><code>StoneType</code>, <code>Type</code>, <code>Material</code> &rarr; Stone Type</li>
+                        <li><code>SquareFeet</code>, <code>SqFt</code>, <code>Area</code> &rarr; Square Feet</li>
+                        <li>Unmapped columns are stored in <code>extra_json</code></li>
                     </ul>
                 </div>
             </div>
@@ -79,13 +85,13 @@
                     <thead class="table-light">
                         <tr>
                             <th>ID</th>
-                            <th>Source</th>
+                            <th>Type</th>
                             <th>Batch ID</th>
                             <th>Status</th>
-                            <th>Records</th>
+                            <th>Processed</th>
                             <th>Success</th>
                             <th>Failed</th>
-                            <th>Duplicates</th>
+                            <th>Skipped</th>
                             <th>Timestamp</th>
                             <th>Details</th>
                         </tr>
@@ -119,20 +125,20 @@
                                     <span class="badge bg-secondary">{{ import_log.status }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ import_log.total_records or 0 }}</td>
+                            <td>{{ import_log.items_processed or 0 }}</td>
                             <td>
-                                <span class="text-success">{{ import_log.successful_records or 0 }}</span>
+                                <span class="text-success">{{ import_log.items_success or 0 }}</span>
                             </td>
                             <td>
-                                {% if import_log.failed_records and import_log.failed_records > 0 %}
-                                    <span class="text-danger">{{ import_log.failed_records }}</span>
+                                {% if import_log.items_failed and import_log.items_failed > 0 %}
+                                    <span class="text-danger">{{ import_log.items_failed }}</span>
                                 {% else %}
                                     <span class="text-muted">0</span>
                                 {% endif %}
                             </td>
                             <td>
-                                {% if import_log.duplicate_records and import_log.duplicate_records > 0 %}
-                                    <span class="text-warning">{{ import_log.duplicate_records }}</span>
+                                {% if import_log.items_skipped and import_log.items_skipped > 0 %}
+                                    <span class="text-warning">{{ import_log.items_skipped }}</span>
                                 {% else %}
                                     <span class="text-muted">0</span>
                                 {% endif %}
@@ -141,28 +147,51 @@
                                 <small>{{ import_log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
                             </td>
                             <td>
-                                {% if import_log.error_message %}
+                                {% if import_log.errors %}
                                     <button type="button" class="btn btn-sm btn-outline-danger"
                                             data-bs-toggle="modal" data-bs-target="#errorModal{{ import_log.id }}">
-                                        <i class="bi bi-exclamation-triangle"></i> Error
+                                        <i class="bi bi-exclamation-triangle"></i> Errors
                                     </button>
+                                {% elif import_log.summary %}
+                                    <small class="text-muted">{{ import_log.summary }}</small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
 
+                                {% if import_log.errors %}
                                     <!-- Error Modal -->
                                     <div class="modal fade" id="errorModal{{ import_log.id }}" tabindex="-1">
-                                        <div class="modal-dialog">
+                                        <div class="modal-dialog modal-lg">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title">Import Error</h5>
+                                                    <h5 class="modal-title">Import Errors (Batch: {{ import_log.batch_id }})</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <pre class="small">{{ import_log.error_message }}</pre>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Row</th>
+                                                                    <th>Column</th>
+                                                                    <th>Error</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% for err in import_log.errors %}
+                                                                <tr>
+                                                                    <td>{{ err.row }}</td>
+                                                                    <td>{{ err.column or '-' }}</td>
+                                                                    <td class="text-danger">{{ err.message or err.error }}</td>
+                                                                </tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                {% else %}
-                                    <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
                         </tr>
