@@ -1144,8 +1144,13 @@ class ImportProcessor:
             results: Import results dictionary
         """
         try:
-            # Determine status
-            if results["rows_failed"] > 0 and results["rows_imported"] == 0 and results["rows_updated"] == 0:
+            # Determine status - check if already set to failed (e.g., header errors)
+            if results["status"] == "failed":
+                pass  # Keep failed status
+            elif results["errors"] and results["rows_processed"] == 0:
+                # Header validation errors (no rows processed but errors exist)
+                results["status"] = "failed"
+            elif results["rows_failed"] > 0 and results["rows_imported"] == 0 and results["rows_updated"] == 0:
                 results["status"] = "failed"
             elif results["rows_failed"] > 0:
                 results["status"] = "partial"
