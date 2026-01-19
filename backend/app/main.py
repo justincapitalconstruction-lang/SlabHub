@@ -273,7 +273,7 @@ logger.info(f"Initialized templates from: {templates_path}")
 # ============================================================================
 
 # Import routers
-from backend.app.routers import slabs, admin, kiosk, jobs, workers, gpt, catalog, admin_settings
+from backend.app.routers import slabs, admin, kiosk, jobs, workers, gpt, catalog, admin_settings, export
 
 # Mount API routers
 app.include_router(
@@ -329,6 +329,12 @@ app.include_router(
     tags=["admin-settings"]
 )
 
+# Mount Export API routers
+app.include_router(
+    export.router,
+    tags=["export"]
+)
+
 logger.info("Registered routes:")
 logger.info("  - /api/v1/slabs (Slab API)")
 logger.info("  - /admin (Admin interface)")
@@ -337,6 +343,7 @@ logger.info("  - /api/v1/jobs (Job API)")
 logger.info("  - /api/v1/workers (Worker API)")
 logger.info("  - /api/v1/gpt (GPT API)")
 logger.info("  - /api/v1/catalog (Catalog API)")
+logger.info("  - /api/v1/export (Export API)")
 logger.info("  - /api/v1/admin/settings (Admin Settings API)")
 
 
@@ -369,7 +376,8 @@ async def health_check():
         # Check database connectivity
         db = SessionLocal()
         try:
-            db.execute("SELECT 1")
+            from sqlalchemy import text
+            db.execute(text("SELECT 1"))
             db_status = "connected"
         except Exception as e:
             db_status = f"error: {str(e)}"

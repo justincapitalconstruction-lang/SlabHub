@@ -11,6 +11,7 @@ from backend.app.routers import (
     gpt,
     catalog,
     admin_settings,
+    export,
 )
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     "gpt",
     "catalog",
     "admin_settings",
+    "export",
 ]
