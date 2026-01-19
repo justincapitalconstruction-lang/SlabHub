@@ -56,36 +56,66 @@ def query_slabs(db: Session, filters: dict) -> List[Slab]:
     return q.all()
 
 
-@router.get("/api/v1/export/slabs", name="export_slabs")
+@router.get(
+    "/api/v1/export/slabs",
+    name="export_slabs",
+    summary="Export slabs with filters",
+    description="Export slab inventory to CSV or JSON format with optional filtering by name, type, location, status, dimensions, and price.",
+    tags=["Export"],
+    responses={
+        200: {
+            "description": "Successful export",
+            "content": {
+                "text/csv": {
+                    "example": "SlabID,Name,StoneType,Supplier,Thickness,Location,...\nABC123,Calacatta Marble,Marble,Stone Inc,2.0,Warehouse A,..."
+                },
+                "application/json": {
+                    "example": {
+                        "total": 100,
+                        "filters": {"status": "available"},
+                        "slabs": [{"id": 1, "public_id": "ABC123", "name": "Calacatta Marble"}]
+                    }
+                }
+            }
+        },
+        400: {"description": "Invalid filter parameters"}
+    }
+)
 def export_slabs(
-    name: Optional[str] = Query(None, description="Filter by slab name (partial match)"),
-    stone_type: Optional[str] = Query(None, description="Filter by stone type"),
-    location: Optional[str] = Query(None, description="Filter by location"),
-    status: Optional[str] = Query(None, description="Filter by status"),
-    min_thickness: Optional[float] = Query(None, description="Minimum thickness"),
-    max_thickness: Optional[float] = Query(None, description="Maximum thickness"),
-    min_price: Optional[float] = Query(None, description="Minimum price"),
-    max_price: Optional[float] = Query(None, description="Maximum price"),
-    format: str = Query("csv", description="Export format: csv or json"),
+    name: Optional[str] = Query(None, description="Filter by slab name (case-insensitive partial match)", example="marble"),
+    stone_type: Optional[str] = Query(None, description="Filter by stone type (e.g., Marble, Granite, Quartzite)", example="Marble"),
+    location: Optional[str] = Query(None, description="Filter by storage location", example="Warehouse A"),
+    status: Optional[str] = Query(None, description="Filter by status (available, reserved, sold, etc.)", example="available"),
+    min_thickness: Optional[float] = Query(None, description="Minimum thickness in inches", ge=0, example=2.0),
+    max_thickness: Optional[float] = Query(None, description="Maximum thickness in inches", ge=0, example=3.0),
+    min_price: Optional[float] = Query(None, description="Minimum price in dollars", ge=0, example=500.0),
+    max_price: Optional[float] = Query(None, description="Maximum price in dollars", ge=0, example=2000.0),
+    format: str = Query("csv", description="Export format: 'csv' for CSV file download or 'json' for JSON response", regex="^(csv|json)$", example="csv"),
     db: Session = Depends(get_db)
 ):
     """
     Export slabs to CSV or JSON format with optional filtering.
 
-    Query Parameters:
-        - name: Filter by slab name (case-insensitive partial match)
-        - stone_type: Filter by stone type
-        - location: Filter by storage location
-        - status: Filter by status (available, reserved, sold, etc.)
-        - min_thickness: Minimum thickness filter
-        - max_thickness: Maximum thickness filter
-        - min_price: Minimum price filter
-        - max_price: Maximum price filter
-        - format: Export format (csv or json)
+    **CSV Export:**
+    - Returns a downloadable CSV file with 19 columns
+    - Includes all slab metadata (ID, name, dimensions, pricing, etc.)
+    - Filename: `slabs_export.csv`
 
-    Returns:
-        - CSV: StreamingResponse with CSV file download
-        - JSON: List of slab objects
+    **JSON Export:**
+    - Returns structured JSON with total count, applied filters, and slab array
+    - All fields include ISO timestamps for created_at/updated_at
+
+    **Filtering:**
+    - Multiple filters can be combined (AND logic)
+    - Text filters (name, stone_type, location) use case-insensitive partial matching
+    - Numeric filters (thickness, price) use inclusive ranges
+    - Status filter uses exact matching
+
+    **Example Requests:**
+    - Export all as CSV: `GET /api/v1/export/slabs?format=csv`
+    - Available slabs only: `GET /api/v1/export/slabs?format=json&status=available`
+    - Price range filter: `GET /api/v1/export/slabs?format=csv&min_price=500&max_price=2000`
+    - Combined filters: `GET /api/v1/export/slabs?format=json&stone_type=marble&location=Warehouse%20A`
     """
     filters = {
         "name": name,

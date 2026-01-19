@@ -564,20 +564,76 @@ async def admin_import_upload(
         )
 
 
-@router.post("/api/v1/import/metadata", name="api_import_metadata")
+@router.post(
+    "/api/v1/import/metadata",
+    name="api_import_metadata",
+    summary="Import slab metadata from CSV/XLSX",
+    description="Upload a CSV or XLSX file to import or update slab metadata. Returns detailed results including validation errors.",
+    tags=["Import"],
+    response_model=None,  # Will be ImportResult but defined inline below
+    responses={
+        200: {
+            "description": "Import completed (may include errors for individual rows)",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "batch_id": "slabcrop_20260118_123456_abc123",
+                        "status": "completed",
+                        "file_type": "csv",
+                        "rows_processed": 100,
+                        "rows_imported": 95,
+                        "rows_updated": 5,
+                        "rows_failed": 0,
+                        "rows_skipped": 0,
+                        "errors": [],
+                        "warnings": [],
+                        "summary": "Import completed: 100 processed, 95 imported, 5 updated, 0 failed, 0 skipped"
+                    }
+                }
+            }
+        },
+        415: {"description": "Unsupported file type (must be .csv, .xlsx, or .xls)"},
+        500: {"description": "Internal server error during processing"}
+    }
+)
 async def api_import_metadata(
-    file: UploadFile = File(...),
+    file: UploadFile = File(..., description="CSV or XLSX file containing slab metadata"),
     db: Session = Depends(get_db)
 ):
     """
-    API endpoint for metadata import (returns JSON).
+    Import or update slab metadata from CSV/XLSX files.
 
-    Supports:
-    - .csv files (UTF-8 or Latin-1 encoded)
-    - .xlsx files (requires openpyxl)
+    **Supported Formats:**
+    - CSV files (`.csv`) - UTF-8 or Latin-1 encoding
+    - Excel files (`.xlsx`, `.xls`) - requires openpyxl package
 
-    Returns:
-        ImportResult with batch_id, status, row counts, and errors
+    **Required Column:**
+    - `Name` (or `Title`, `Slab_Name`) - Slab identifier
+
+    **Optional Columns:**
+    - `SlabID` - If present and matches existing slab, performs update (upsert)
+    - `StoneType`, `Supplier`, `Finish`, `Thickness`, `Color`, `Length`, `Width`
+    - `SquareFeet`, `Location`, `Status`, `Quantity`, `Cost`, `Price`, `Tags`, `Notes`
+
+    **Column Mapping:**
+    - Headers are case-insensitive and flexible (e.g., "Stone Type" = "StoneType" = "stone_type")
+    - See API_REFERENCE.md for full column mapping table
+
+    **Validation:**
+    - Row-level validation with specific error messages
+    - Numeric fields must be valid numbers
+    - Empty rows are skipped
+
+    **Response:**
+    - `status`: "completed" (all success), "partial" (some errors), or "failed" (validation/critical error)
+    - `errors`: Array of row-level validation errors with row number, column, and message
+    - `batch_id`: Unique identifier for tracking this import in the database
+
+    **Example:**
+    ```bash
+    curl -X POST http://localhost:8000/api/v1/import/metadata \\
+      -F "file=@slabs.csv"
+    ```
     """
     from backend.app.schemas import ImportResult, ImportRowError
 
